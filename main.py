@@ -4,13 +4,15 @@ TECH WORLD DAILY INTELLIGENCE → Google Drive
 Pipeline:
   1. Pull deep global technology, AI, semiconductor, and startup news from NewsAPI.
   2. Ask Gemini to curate the exact executive-level "TECH WORLD DAILY INTELLIGENCE" report.
-  3. Upload the formatted result into your Google Drive folder via Webhook.
+  3. Extract topic anchors and construct exact filename: YYYY-MM-DD [Tech] — Topic 1, Topic 2 & Topic 3
+  4. Upload formatted result into Google Drive folder via Webhook.
 
 All secrets are read from environment variables — never hardcode keys here.
 """
 
 import os
 import sys
+import re
 import datetime
 import requests
 
@@ -182,11 +184,32 @@ Raw News Stream:
 
 
 # ---------------------------------------------------------------------------
-# Step 3: Upload to Google Drive via Google Apps Script Webhook
+# Step 3: Extract Topic and Format File Name
+# Format: YYYY-MM-DD [Tech] — Topic 1, Topic 2 & Topic 3
+# ---------------------------------------------------------------------------
+def generate_file_name(report_text: str) -> str:
+    today_iso = datetime.date.today().strftime("%Y-%m-%d")
+    
+    # Try to extract Topic line from report
+    topic_match = re.search(r"Topic:\s*([^\n\r]+)", report_text, re.IGNORECASE)
+    if topic_match:
+        topic = topic_match.group(1).strip()
+        # Clean up unwanted markdown bold or brackets
+        topic = re.sub(r"[\*\[\]#]", "", topic).strip()
+        # Truncate if overly long
+        if len(topic) > 75:
+            topic = topic[:72] + "..."
+        return f"{today_iso} [Tech] \u2014 {topic}"
+    
+    return f"{today_iso} [Tech] \u2014 Daily Intelligence Briefing"
+
+
+# ---------------------------------------------------------------------------
+# Step 4: Upload to Google Drive via Google Apps Script Webhook
 # ---------------------------------------------------------------------------
 def upload_to_drive(markdown_text: str) -> dict:
-    today_str = datetime.date.today().strftime("%B %d, %Y")
-    doc_title = f"TECH WORLD DAILY INTELLIGENCE - {today_str}"
+    doc_title = generate_file_name(markdown_text)
+    print(f"Generated Document Title: {doc_title}")
 
     payload = {
         "title": doc_title,
@@ -215,7 +238,7 @@ def main():
     print("Authoring 'TECH WORLD DAILY INTELLIGENCE' with Gemini...")
     briefing = summarize_with_gemini(articles)
 
-    print("Uploading to Google Drive...")
+    print("Uploading styled executive briefing to Google Drive...")
     result = upload_to_drive(briefing)
 
     print(f"Done! Created document -> {result.get('url', 'Uploaded')}")
