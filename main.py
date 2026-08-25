@@ -1,10 +1,10 @@
 """
-Daily Tech News Briefing → Google Drive
+TECH WORLD DAILY INTELLIGENCE → Google Drive
 
 Pipeline:
-  1. Pull the latest technology headlines and industry news from NewsAPI.
-  2. Ask Gemini to curate and structure an executive-level intelligence report.
-  3. Upload the result as a Google Doc directly into your Google Drive folder via Webhook.
+  1. Pull deep global technology, AI, semiconductor, and startup news from NewsAPI.
+  2. Ask Gemini to curate the exact executive-level "TECH WORLD DAILY INTELLIGENCE" report.
+  3. Upload the formatted result into your Google Drive folder via Webhook.
 
 All secrets are read from environment variables — never hardcode keys here.
 """
@@ -25,12 +25,12 @@ GEMINI_MODEL = "gemini-3.6-flash"
 
 
 # ---------------------------------------------------------------------------
-# Step 1: Fetch comprehensive news
+# Step 1: Fetch comprehensive news across global tech & India ecosystem
 # ---------------------------------------------------------------------------
 def fetch_news() -> list[dict]:
     articles = []
-    
-    # 1. Top tech headlines
+
+    # 1. Global top technology headlines
     try:
         url = "https://newsapi.org/v2/top-headlines"
         params = {"category": "technology", "language": "en", "pageSize": 30, "apiKey": NEWS_API_KEY}
@@ -40,14 +40,14 @@ def fetch_news() -> list[dict]:
     except Exception as e:
         print("Warning fetching top headlines:", e)
 
-    # 2. Broader query for AI, semiconductors, startups, big tech, and India tech
+    # 2. Deep search for AI, semiconductors, quantum, startups, infrastructure, India tech
     try:
         url = "https://newsapi.org/v2/everything"
         params = {
-            "q": "AI OR semiconductor OR Nvidia OR OpenAI OR Google OR Apple OR startup OR cybersecurity OR India tech",
+            "q": "AI OR semiconductor OR Nvidia OR OpenAI OR Anthropic OR 'Google DeepMind' OR 'Meta AI' OR quantum OR startup OR IndiaAI OR Semicon OR cybersecurity",
             "language": "en",
             "sortBy": "publishedAt",
-            "pageSize": 40,
+            "pageSize": 50,
             "apiKey": NEWS_API_KEY,
         }
         resp = requests.get(url, params=params, timeout=30)
@@ -56,20 +56,20 @@ def fetch_news() -> list[dict]:
     except Exception as e:
         print("Warning fetching everything query:", e)
 
-    # Deduplicate by title
+    # Deduplicate articles
     seen_titles = set()
     unique_articles = []
     for a in articles:
-        title = (a.get("title") or "").strip().lower()
-        if title and title not in seen_titles and "[removed]" not in title:
-            seen_titles.add(title)
+        title = (a.get("title") or "").strip()
+        if title and title.lower() not in seen_titles and "[removed]" not in title.lower():
+            seen_titles.add(title.lower())
             unique_articles.append(a)
 
     return unique_articles
 
 
 # ---------------------------------------------------------------------------
-# Step 2: Generate "TECH WORLD DAILY INTELLIGENCE" with Gemini
+# Step 2: Author the exact "TECH WORLD DAILY INTELLIGENCE" with Gemini
 # ---------------------------------------------------------------------------
 def summarize_with_gemini(articles: list[dict]) -> str:
     lines = []
@@ -85,104 +85,81 @@ def summarize_with_gemini(articles: list[dict]) -> str:
 
     today_str = datetime.date.today().strftime("%B %d, %Y")
 
-    prompt = f"""You are a world-class technology strategist, Silicon Valley venture capitalist, and chief intelligence officer.
-Your task is to analyze today's technology news and author the prestigious "TECH WORLD DAILY INTELLIGENCE" executive briefing.
+    prompt = f"""You are the Chief Intelligence Officer and lead author of "TECH WORLD DAILY INTELLIGENCE" — the premier strategic briefing read by C-suite executives, tier-1 venture capitalists, and top policymakers.
 
+Date of Briefing: {today_str}
+
+Author today's comprehensive intelligence report based on the provided raw news stream. Emulate the exact structure, rigorous analytical depth, institutional tone, and strategic precision shown in the reference standard below.
+
+### MANDATORY REFERENCE STRUCTURE & STYLE GUIDELINE:
+
+🌐 TECH WORLD DAILY INTELLIGENCE
 Date: {today_str}
+Topic: [3-4 major narrative anchors of today, e.g. "NVIDIA $105B OpenAI Ohio Campus, QpiAI Quantum Foundry & IndiaAI GPU Scale"]
+Overall Tech Pulse: [A dense, highly strategic 2-3 sentence paragraph capturing the overarching macro shift, capital allocation, technology transition, and geopolitical/industry posture.]
 
-Analyze the raw news items below and produce an authoritative, highly detailed intelligence document that strictly follows the EXACT format below.
+🔥 TOP 5 DEVELOPMENTS
 
-### STRICT FORMAT REQUIREMENTS:
+1. [Bold, Concrete Headline with Exact Financial Numbers / Key Metric / Action]
+● Importance: [Score, e.g. 10/10 (Industry Defining) or 9/10 (High Impact) or 8/10 (High Impact)]
+● Category: [Specific strategic category, e.g. Infrastructure & Big Tech Finance / Artificial Intelligence & Open Source / Sovereign Semiconductors & India Tech / AI Cybersecurity & Defense / Defense Technology & Edge Hardware]
+● Verification Status: 🔴 Confirmed ([Official Release / Securities Filings / Ministry Gazette & PIB Disclosures / Company Announcement & Facility Launch / Industry Summit])
+● What Happened: [Deep, rigorous 3-4 sentence breakdown with precise names, entities, numbers, specs, and strategic actions.]
+● Why It Matters: [Deep macroeconomic, competitive moat, capital expenditure, and industry structural analysis.]
+● What Changed: [Direct, incisive paradigm shift comparison: "Previously... Now..."]
+● What's Next: [Concrete forward-looking timeline, roadmap milestones, regulatory actions, or hardware delivery dates.]
+● Source: [Source Name](URL)
+● Independent Coverage: [Secondary Source Name](URL) [if available from raw list, else omit]
 
-# 🌐 TECH WORLD DAILY INTELLIGENCE
-**Date:** {today_str}
-**Topic:** [Identify the top 3-4 major themes/stories driving today's briefing separated by commas / ampersands]
-**Overall Tech Pulse:** [A comprehensive, high-level strategic paragraph analyzing today's macro shifts, capital allocation, technology transitions, and industry posture.]
+(Provide all 5 developments with identical depth, structure, and bullet points)
 
----
+🤖 AI RADAR
+1. [Headline/Theme]: [1-2 sentence dense intelligence summary on model architectures, post-training, or benchmarks]. (Source: [Source Name](URL))
+2. [Headline/Theme]: [1-2 sentence dense intelligence summary]. (Source: [Source Name](URL))
+3. [Headline/Theme]: [1-2 sentence dense intelligence summary]. (Source: [Source Name](URL))
+4. [Headline/Theme]: [1-2 sentence dense intelligence summary]. (Source: [Source Name](URL))
 
-## 🔥 TOP 5 DEVELOPMENTS
+👔 CEO & FOUNDER WATCH
+● [Leader Full Name] ([Title, Company/Organization])
+  ○ Statement/Action: [Specific executive directive, public manifesto, restructuring, or strategic quote.]
+  ○ Classification: 🔴 OFFICIAL ANNOUNCEMENT (or 🟠 SIGNIFICANT STATEMENT)
+  ○ Why It Matters: [Strategic implications on market dominance and enterprise mindshare.]
+  ○ Source: [Source Name](URL)
+(Include 2-3 prominent executives/ministers, e.g. Jensen Huang, Sam Altman, Mark Zuckerberg, Dario Amodei, Ashwini Vaishnaw, etc.)
 
-For each of the top 5 most critical industry-defining stories, generate this EXACT structured breakdown:
+🚀 STARTUP & FUNDING RADAR
+● [Company Name]: [Funding round, valuation, tier-1 investors, and disruptive technology angle]. (Source: [Source Name](URL))
+● [Company Name]: [Details]. (Source: [Source Name](URL))
+● [Sector Capital Flow]: [Details]. (Source: [Source Name](URL))
 
-### 1. [Bold, Punchy, Strategic Headline with Dollar Amounts / Metrics if applicable]
-* **Importance:** [e.g., 10/10 (Industry Defining) or 9/10 (High Impact) or 8/10 (High Impact)]
-* **Category:** [e.g., Infrastructure & Big Tech Finance / Artificial Intelligence & Open Source / AI Regulation & Governance / Semiconductor Ecosystem & Sovereign AI / AI Cybersecurity & Defense / Big Tech Leadership & Strategy]
-* **Verification Status:** 🔴 Confirmed ([Official Release / Official Announcement / Official Transition / Venture Filing / Security Release / etc.])
-* **What Happened:** [Detailed 2-3 sentence breakdown of exact details, key entities, numbers, specifications, and actions taken.]
-* **Why It Matters:** [Deep strategic, economic, and competitive analysis. Why this alters market dynamics or industry balance.]
-* **What Changed:** [Direct comparison of previous paradigm vs the new reality established today.]
-* **What's Next:** [Upcoming roadmap, milestones, regulatory deadlines, hardware deployments, or market reactions.]
-* **Source:** [Source Name](URL)
-* **Independent Coverage:** [Secondary Source Name](URL) [if available from raw list, else omit]
+🧠 RESEARCH & BREAKTHROUGH RADAR
+● [Project / Model Name] [[Prototype/Research/Commercial/Production]]: [Breakthrough technical summary, parameter counts, benchmarks, or efficiency improvements]. (Source: [Source Name](URL))
+● [Project Name] [[Status]]: [Details]. (Source: [Source Name](URL))
+● [Project Name] [[Status]]: [Details]. (Source: [Source Name](URL))
 
-(Repeat identical structure for items 2, 3, 4, and 5)
+💻 DEVELOPER & SOFTWARE RADAR
+● [Tool / Framework / Agent Runtime / Workflow Shift]: [Technical developer ecosystem impact, runtime specs, or workflow transition]. (Source: [Source Name](URL))
+● [Topic]: [Details]. (Source: [Source Name](URL))
 
----
+☁️ INFRASTRUCTURE RADAR
+● [Compute Securitization / Liquid Cooling / Silicon Photonics / Power Substations]: [Data center energy, high-bandwidth memory (HBM), optical interconnects, or wafer-scale cluster insight]. (Source: [Source Name](URL))
+● [Topic]: [Details]. (Source: [Source Name](URL))
 
-## 🤖 AI RADAR
-1. **[Headline/Theme]:** [Concise 1-2 sentence high-impact intelligence summary]. *(Source: [Source Name](URL))*
-2. **[Headline/Theme]:** [Concise 1-2 sentence high-impact intelligence summary]. *(Source: [Source Name](URL))*
-3. **[Headline/Theme]:** [Concise 1-2 sentence high-impact intelligence summary]. *(Source: [Source Name](URL))*
-4. **[Headline/Theme]:** [Concise 1-2 sentence high-impact intelligence summary]. *(Source: [Source Name](URL))*
+🇮🇳 INDIA TECH WATCH
+● [Semicon 2.0 / IndiaAI / Fab Construction / Domestic DeepTech]: [Specific progress on India's semiconductor manufacturing, sovereign compute grid, or deeptech funding]. (Source: [Source Name](URL))
+● [Initiative Name]: [Details]. (Source: [Source Name](URL))
 
----
+📈 WHAT IS CHANGING IN TECH? (Emerging Patterns)
+1. [Pattern 1 Name]: [Sharp, authoritative synthesis of structural transition happening across global tech.]
+2. [Pattern 2 Name]: [Sharp synthesis of structural transition.]
+3. [Pattern 3 Name]: [Sharp synthesis of structural transition.]
+4. [Pattern 4 Name]: [Sharp synthesis of structural transition.]
 
-## 👔 CEO & FOUNDER WATCH
-* **[Leader Name] ([Title, Organization/Company])**
-  * **Statement/Action:** [Specific public action, statement, manifesto, or executive shift.]
-  * **Classification:** 🔴 OFFICIAL ANNOUNCEMENT *(or 🟠 SIGNIFICANT STATEMENT)*
-  * **Why It Matters:** [Strategic intent and impact on ecosystem.]
-  * **Source:** [Source Name](URL)
-
-(Include 2-3 prominent leaders)
-
----
-
-## 🚀 STARTUP & FUNDING RADAR
-* **[Company Name]:** [Funding round, valuation, investors, and product/market disruption details]. *(Source: [Source Name](URL))*
-* **[Company Name]:** [Details]. *(Source: [Source Name](URL))*
-* **[Sector Trend]:** [Details]. *(Source: [Source Name](URL))*
-
----
-
-## 🧠 RESEARCH & BREAKTHROUGH RADAR
-* **[Project/Model/Discovery Name] [[Prototype/Research/Commercial/Production]]:** [Breakthrough technical summary and real-world implications]. *(Source: [Source Name](URL))*
-* **[Project/Model Name] [[Status]]:** [Details]. *(Source: [Source Name](URL))*
-
----
-
-## 💻 DEVELOPER & SOFTWARE RADAR
-* **[Tool/Framework/Language Update]:** [Developer ecosystem impact, architecture, or performance shift]. *(Source: [Source Name](URL))*
-* **[Topic/Shift]:** [Details]. *(Source: [Source Name](URL))*
+💡 ONE THING TO REMEMBER
+"[A profound, memorable, 1-2 sentence executive quote capturing the overarching macro insight of today's tech developments.]"
 
 ---
-
-## ☁️ INFRASTRUCTURE RADAR
-* **[Topic - e.g., Compute Securitization / HBM & Cooling / Optical Interconnects]:** [Data center, silicon supply, or cloud architecture insight]. *(Source: [Source Name](URL))*
-* **[Topic]:** [Details]. *(Source: [Source Name](URL))*
-
----
-
-## 🇮🇳 INDIA TECH WATCH
-* **[Key Milestone/Initiative - e.g. Semicon 2.0 / IndiaAI / Digital Public Infrastructure]:** [Policy, investment, or technological milestone relevant to India's tech ecosystem]. *(Source: [Source Name](URL))*
-* **[Global Alignment/Domestic Expansion]:** [Details]. *(Source: [Source Name](URL))*
-
----
-
-## 📈 WHAT IS CHANGING IN TECH? (Emerging Patterns)
-1. **[Pattern 1 Name]:** [Sharp synthesis of structural shift happening across the industry.]
-2. **[Pattern 2 Name]:** [Sharp synthesis of structural shift happening across the industry.]
-3. **[Pattern 3 Name]:** [Sharp synthesis of structural shift happening across the industry.]
-4. **[Pattern 4 Name]:** [Sharp synthesis of structural shift happening across the industry.]
-
----
-
-## 💡 ONE THING TO REMEMBER
-"[A profound, memorable, 1-2 sentence executive quote summarizing the overarching strategic takeaway of today's tech shifts.]"
-
----
-Raw News Articles to synthesize from:
+Raw News Stream:
 {articles_block}
 """
 
@@ -195,9 +172,9 @@ Raw News Articles to synthesize from:
         params={"key": GEMINI_API_KEY},
         json={
             "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.3}
+            "generationConfig": {"temperature": 0.25}
         },
-        timeout=120,
+        timeout=150,
     )
     resp.raise_for_status()
     data = resp.json()
@@ -228,17 +205,17 @@ def upload_to_drive(markdown_text: str) -> dict:
 # Main
 # ---------------------------------------------------------------------------
 def main():
-    print("Fetching latest tech news...")
+    print("Fetching latest comprehensive tech news...")
     articles = fetch_news()
     if not articles:
         print("No articles returned by NewsAPI today — nothing to upload.")
         sys.exit(0)
     print(f"Fetched {len(articles)} unique articles.")
 
-    print("Synthesizing 'TECH WORLD DAILY INTELLIGENCE' with Gemini...")
+    print("Authoring 'TECH WORLD DAILY INTELLIGENCE' with Gemini...")
     briefing = summarize_with_gemini(articles)
 
-    print("Uploading executive briefing to Google Drive...")
+    print("Uploading to Google Drive...")
     result = upload_to_drive(briefing)
 
     print(f"Done! Created document -> {result.get('url', 'Uploaded')}")
