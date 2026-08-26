@@ -43,6 +43,16 @@ def fetch_news() -> list[dict]:
     except Exception as e:
         print("Warning fetching top headlines:", e)
 
+    # 1.5. India-centric tech headlines
+    try:
+        url = "https://newsapi.org/v2/top-headlines"
+        params = {"country": "in", "category": "technology", "pageSize": 30, "apiKey": NEWS_API_KEY}
+        resp = requests.get(url, params=params, timeout=30)
+        if resp.ok:
+            articles.extend(resp.json().get("articles", []))
+    except Exception as e:
+        print("Warning fetching India headlines:", e)
+
     # 2. Deep search for AI, semiconductors, quantum, startups, infrastructure, India tech
     try:
         url = "https://newsapi.org/v2/everything"
@@ -93,6 +103,8 @@ def summarize_with_gemini(articles: list[dict]) -> str:
 Date of Briefing: {today_str}
 
 Author today's comprehensive intelligence report based on the provided raw news stream. Emulate the exact structure, rigorous analytical depth, institutional tone, and strategic precision shown in the reference standard below.
+
+CRITICAL INSTRUCTION: Strongly prioritize and prominently feature India-centric technology news, startups, policies, and developments throughout the report (especially in the TOP 5 DEVELOPMENTS). You must still include the most important global tech news, but give the briefing a distinct India-centric flavor.
 
 ### MANDATORY REFERENCE STRUCTURE & STYLE GUIDELINE:
 
