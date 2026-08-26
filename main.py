@@ -15,6 +15,7 @@ import sys
 import re
 import datetime
 import requests
+import time
 
 # ---------------------------------------------------------------------------
 # Config (from environment / GitHub Actions secrets)
@@ -169,18 +170,31 @@ Raw News Stream:
         f"https://generativelanguage.googleapis.com/v1beta/models/"
         f"{GEMINI_MODEL}:generateContent"
     )
-    resp = requests.post(
-        endpoint,
-        params={"key": GEMINI_API_KEY},
-        json={
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.25}
-        },
-        timeout=150,
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    return data["candidates"][0]["content"]["parts"][0]["text"]
+    
+    max_retries = 4
+    delay = 5
+    
+    for attempt in range(max_retries + 1):
+        resp = requests.post(
+            endpoint,
+            params={"key": GEMINI_API_KEY},
+            json={
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": 0.25}
+            },
+            timeout=150,
+        )
+        
+        if resp.status_code in (429, 500, 503):
+            if attempt < max_retries:
+                print(f"Server busy (status {resp.status_code}), retrying in {delay} seconds...")
+                time.sleep(delay)
+                delay *= 2
+                continue
+            
+        resp.raise_for_status()
+        data = resp.json()
+        return data["candidates"][0]["content"]["parts"][0]["text"]
 
 
 # ---------------------------------------------------------------------------
