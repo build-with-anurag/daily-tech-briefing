@@ -24,9 +24,9 @@ Add these 3 secrets:
 
 | Secret Name | Value |
 |---|---|
-| `NEWS_API_KEY` | `52b18094a9094541994668d777db8cc4` |
-| `GEMINI_API_KEY` | `AQ.Ab8RN6K26ti-V6pCzcvGWzDrvG48U42eMVpOQeGiHPnKSudULQ` |
-| `DRIVE_WEBHOOK_URL` | `https://script.google.com/macros/s/AKfycbyyatHVqr8_nRm3HK-krOcdX2G056AxTqX8fYkeTFLyZL1sK4bGTNbVmE0JnfkFu18thg/exec` |
+| `NEWS_API_KEY` | `YOUR_NEWS_API_KEY_HERE` |
+| `GEMINI_API_KEY` | `YOUR_GEMINI_API_KEY_HERE` |
+| `DRIVE_WEBHOOK_URL` | `YOUR_DRIVE_WEBHOOK_URL_HERE` |
 
 ---
 
