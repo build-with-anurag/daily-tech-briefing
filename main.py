@@ -24,7 +24,8 @@ NEWS_API_KEY = os.environ["NEWS_API_KEY"]
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 DRIVE_WEBHOOK_URL = os.environ["DRIVE_WEBHOOK_URL"]
 
-GEMINI_MODEL = "gemini-3.6-flash"
+# Use a valid Gemini model ID for the Google Generative Language API.
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 
 # ---------------------------------------------------------------------------
@@ -98,13 +99,13 @@ def summarize_with_gemini(articles: list[dict]) -> str:
 
     today_str = datetime.date.today().strftime("%B %d, %Y")
 
-    prompt = f"""You are the Chief Intelligence Officer and lead author of "TECH WORLD DAILY INTELLIGENCE" — the premier strategic briefing read by C-suite executives, tier-1 venture capitalists, and top policymakers.
+    prompt = f"""You are the Chief Intelligence Officer and lead author of "TECH WORLD DAILY INTELLIGENCE" — the premier strategic briefing read by C-suite executives, tier-1 venture capitalist[...]
 
 Date of Briefing: {today_str}
 
-Author today's comprehensive intelligence report based on the provided raw news stream. Emulate the exact structure, rigorous analytical depth, institutional tone, and strategic precision shown in the reference standard below.
+Author today's comprehensive intelligence report based on the provided raw news stream. Emulate the exact structure, rigorous analytical depth, institutional tone, and strategic precision shown i[...]
 
-CRITICAL INSTRUCTION: Strongly prioritize and prominently feature India-centric technology news, startups, policies, and developments throughout the report (especially in the TOP 5 DEVELOPMENTS). You must still include the most important global tech news, but give the briefing a distinct India-centric flavor.
+CRITICAL INSTRUCTION: Strongly prioritize and prominently feature India-centric technology news, startups, policies, and developments throughout the report (especially in the TOP 5 DEVELOPMENTS).[...]
 
 ### MANDATORY REFERENCE STRUCTURE & STYLE GUIDELINE:
 
@@ -117,7 +118,7 @@ Overall Tech Pulse: [A dense, highly strategic 2-3 sentence paragraph capturing 
 
 1. [Bold, Concrete Headline with Exact Financial Numbers / Key Metric / Action]
 ● Importance: [Score, e.g. 10/10 (Industry Defining) or 9/10 (High Impact) or 8/10 (High Impact)]
-● Category: [Specific strategic category, e.g. Infrastructure & Big Tech Finance / Artificial Intelligence & Open Source / Sovereign Semiconductors & India Tech / AI Cybersecurity & Defense / Defense Technology & Edge Hardware]
+● Category: [Specific strategic category, e.g. Infrastructure & Big Tech Finance / Artificial Intelligence & Open Source / Sovereign Semiconductors & India Tech / AI Cybersecurity & Defense / Data Center Capital & Supply Chains]
 ● Verification Status: 🔴 Confirmed ([Official Release / Securities Filings / Ministry Gazette & PIB Disclosures / Company Announcement & Facility Launch / Industry Summit])
 ● What Happened: [Deep, rigorous 3-4 sentence breakdown with precise names, entities, numbers, specs, and strategic actions.]
 ● Why It Matters: [Deep macroeconomic, competitive moat, capital expenditure, and industry structural analysis.]
@@ -182,31 +183,42 @@ Raw News Stream:
         f"https://generativelanguage.googleapis.com/v1beta/models/"
         f"{GEMINI_MODEL}:generateContent"
     )
-    
+
     max_retries = 4
     delay = 5
-    
+
     for attempt in range(max_retries + 1):
         resp = requests.post(
             endpoint,
             params={"key": GEMINI_API_KEY},
             json={
                 "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {"temperature": 0.25}
+                "generationConfig": {"temperature": 0.25},
             },
             timeout=150,
         )
-        
+
         if resp.status_code in (429, 500, 503):
             if attempt < max_retries:
                 print(f"Server busy (status {resp.status_code}), retrying in {delay} seconds...")
                 time.sleep(delay)
                 delay *= 2
                 continue
-            
-        resp.raise_for_status()
+
+        if not resp.ok:
+            try:
+                error_details = resp.json()
+            except ValueError:
+                error_details = resp.text
+            raise RuntimeError(
+                f"Gemini API request failed with HTTP {resp.status_code}: {error_details}"
+            )
+
         data = resp.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"]
+        try:
+            return data["candidates"][0]["content"]["parts"][0]["text"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise RuntimeError(f"Unexpected Gemini response: {data}") from exc
 
 
 # ---------------------------------------------------------------------------
@@ -215,7 +227,7 @@ Raw News Stream:
 # ---------------------------------------------------------------------------
 def generate_file_name(report_text: str) -> str:
     today_iso = datetime.date.today().strftime("%Y-%m-%d")
-    
+
     # Try to extract Topic line from report
     topic_match = re.search(r"Topic:\s*([^\n\r]+)", report_text, re.IGNORECASE)
     if topic_match:
@@ -225,9 +237,9 @@ def generate_file_name(report_text: str) -> str:
         # Truncate if overly long
         if len(topic) > 75:
             topic = topic[:72] + "..."
-        return f"{today_iso} [Tech] \u2014 {topic}"
-    
-    return f"{today_iso} [Tech] \u2014 Daily Intelligence Briefing"
+        return f"{today_iso} [Tech] — {topic}"
+
+    return f"{today_iso} [Tech] — Daily Intelligence Briefing"
 
 
 # ---------------------------------------------------------------------------
