@@ -1,0 +1,28 @@
+# Environment & credentials
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.cert
+*.token
+
+# Python & caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Credentials & JSON data
+*.json
+!package.json
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
